@@ -4,7 +4,9 @@
 // --------------------
 // Space efficient implementation of Burrows-Wheeler Transform
 // decoder. The decoder uses REU for temporary storage.
-//
+// The decoder will destroy any contents in two banks (BANK and
+// BANK+1) during decode operation.
+// 
 //
 // Build:
 // java -jar KickAss.jar bwt_decode_6502.asm
@@ -45,6 +47,25 @@
 //------------------------------------------------------------------
 .pc =$0801 "Basic Upstart Program"
 :BasicUpstart($4000)
+
+
+
+//------------------------------------------------------------------
+// Detect and determine size of the REU.
+//------------------------------------------------------------------
+reu_detect:
+                        lda #$00
+                        rts
+
+//------------------------------------------------------------------
+// BWT decode state and data fields.
+//------------------------------------------------------------------
+
+.pc = $8000 "BWT Decode test data."
+target_size: .byte $10, $00
+target_addr: .byte $00, $c0
+target_row:  .byte $03
+target_data  .byte $3a, $30, $33, $32, $32
 
 
 //======================================================================
