@@ -57,6 +57,24 @@ reu_detect:
                         lda #$00
                         rts
 
+
+//------------------------------------------------------------------
+// Create frequency table for all bytes in the target.
+// We use two bytes/byte separated in hi and low tables.
+//------------------------------------------------------------------
+gen_freq_table:     
+                        lda #< target
+                        sta $f8
+                        lda #> target
+                        sta $f9
+
+                        ldy #$00
+                        lda ($f8), y
+                        tax
+                        inc $freq_low, x
+                        bne next
+                        inc $frew_hi, x
+
 //------------------------------------------------------------------
 // BWT decode state and data fields.
 //------------------------------------------------------------------
