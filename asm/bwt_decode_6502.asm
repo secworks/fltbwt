@@ -48,10 +48,27 @@
 .pc =$0801 "Basic Upstart Program"
 :BasicUpstart($4000)
 
+//------------------------------------------------------------------
+// bwt_decode()
+//
+// Start of the bwt decoder.
+//------------------------------------------------------------------
+bwt_decode:
+                        jsr reu_detect
+                        bne reu_available 
+                        
+no_reu:                 // Print error message and quit.
+                        rts
+
+reu_available:
+                        inc $d020
+                        jmp reu_available
 
 
 //------------------------------------------------------------------
-// Detect and determine size of the REU.
+// reu_detect()
+// 
+// If REU detected return 0x01 in accumulator. If not 0x00.
 //------------------------------------------------------------------
 reu_detect:
                         lda #$00
@@ -62,19 +79,19 @@ reu_detect:
 // Create frequency table for all bytes in the target.
 // We use two bytes/byte separated in hi and low tables.
 //------------------------------------------------------------------
-gen_freq_table:     
-                        lda #< target
-                        sta $f8
-                        lda #> target
-                        sta $f9
-
-                        ldy #$00
-                        lda ($f8), y
-                        tax
-                        inc $freq_low, x
-                        bne next
-                        inc $frew_hi, x
-
+// gen_freq_table:     
+//                         lda #< target
+//                         sta $f8
+//                         lda #> target
+//                         sta $f9
+// 
+//                         ldy #$00
+//                         lda ($f8), y
+//                         tax
+//                         inc $freq_low, x
+//                         bne next
+//                         inc $frew_hi, x
+// 
 //------------------------------------------------------------------
 // BWT decode state and data fields.
 //------------------------------------------------------------------
@@ -83,7 +100,7 @@ gen_freq_table:
 target_size: .byte $10, $00
 target_addr: .byte $00, $c0
 target_row:  .byte $03
-target_data  .byte $3a, $30, $33, $32, $32
+target_data: .byte $3a, $30, $33, $32, $32
 
 
 //======================================================================
