@@ -52,17 +52,34 @@
 // bwt_decode()
 //
 // Start of the bwt decoder.
+//
 //------------------------------------------------------------------
 bwt_decode:
+                        // Step 1: Check REU availability
+                        // Quit of not available.
                         jsr reu_detect
-                        bne reu_available 
-                        
-no_reu:                 // Print error message and quit.
-                        rts
+                        beq reu_available 
+                        jmp no_reu
 
 reu_available:
+                        // Step 2: DMA copy block to bank N
                         inc $d020
-                        jmp reu_available
+
+                        // Step 3: For each byte in block:
+                        // 3.1 Store rank in bank N+1 and N+2
+                        // 3.2 Increase rank counter.
+
+                        // Step 4: Starting with last byte, for
+                        // each byte we perform pointer chasing 
+                        // by getting char value and rank to 
+                        // get next byte.
+                        
+                        // Step 5: Done.
+                        rts
+
+
+no_reu:                 // Print error message and quit.
+                        rts
 
 
 //------------------------------------------------------------------
@@ -96,11 +113,9 @@ reu_detect:
 // BWT decode state and data fields.
 //------------------------------------------------------------------
 
-.pc = $8000 "BWT Decode test data."
-target_size: .byte $10, $00
-target_addr: .byte $00, $c0
-target_row:  .byte $03
-target_data: .byte $3a, $30, $33, $32, $32
+// The bank number for the first bank in the REU to use.
+// NOte that we will also use banks n+1 and n+2.
+bwt_bank_n:  .byte $00
 
 
 //======================================================================
