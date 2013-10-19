@@ -6,7 +6,15 @@
 // decoder. The decoder uses REU for temporary storage.
 // The decoder will destroy any contents in two banks (BANK and
 // BANK+1) during decode operation.
+//
+// Usage in the REU:
+// Bank n: Copy of the block.
+// Bank n+1 : Low byte char index.
+// Bank n+2 : High byte char index.
 // 
+// Usage in main memory:
+// rank_low: Low byte rank table. 256 Bytes
+// rank_high: High bute rank table. 256 Bytes.
 //
 // Build:
 // java -jar KickAss.jar bwt_decode_6502.asm
@@ -48,12 +56,14 @@
 .pc =$0801 "Basic Upstart Program"
 :BasicUpstart($4000)
 
+
 //------------------------------------------------------------------
 // bwt_decode()
 //
 // Start of the bwt decoder.
 //
 //------------------------------------------------------------------
+.pc =$0400 "bwt_decode"
 bwt_decode:
                         // Step 1: Check REU availability
                         // Quit of not available.
@@ -64,32 +74,87 @@ bwt_decode:
 reu_available:
                         // Step 2: DMA copy block to bank N
                         inc $d020
+                        
+                        jsr block_copy
 
                         // Step 3: For each byte in block:
                         // 3.1 Store rank in bank N+1 and N+2
                         // 3.2 Increase rank counter.
+
+                        jsr gen_rank_tables
 
                         // Step 4: Starting with last byte, for
                         // each byte we perform pointer chasing 
                         // by getting char value and rank to 
                         // get next byte.
                         
+                        jsr block_decode
+
                         // Step 5: Done.
                         rts
 
 
 no_reu:                 // Print error message and quit.
-                        rts
+                        ldx #$00
+                        lda rts
 
 
 //------------------------------------------------------------------
 // reu_detect()
 // 
-// If REU detected return 0x01 in accumulator. If not 0x00.
+// This routine tries to change the values of the REU base register
+// control registers. If the REU is present the values can change.
+// This is basically borrowed from:
+// http://commodore64.wikispaces.com/Programming+the+REU
 //------------------------------------------------------------------
 reu_detect:
-                        lda #$00
+                        ldx #$0
+
+                        // Write x                          
+reu_detect_l1:          txa
+                        sta $df02, x
+                        inx
+                        cpx #$04
+                        bne reu_detect_l1
+ 
+                        ldx #$0
+reu_detect_l2:          txa
+                        cmp $df00, x
+                        bne reu_detect_fail
+                        inx
+                        cpx #$04
+                        bne reu_detect_l2
+
+                        lda #$01
                         rts
+                        
+reu_detect_fail:        lda #$00
+                        rts
+
+
+//------------------------------------------------------------------
+//------------------------------------------------------------------
+block_copy:
+                        rts
+
+
+//------------------------------------------------------------------
+// gen_rank()
+//
+// 1. Zero fill the rank table.
+// 2. For each char in the block store the current rank
+//    in the REU at the index of the char.
+// 3. Increase the rank table for the char.
+//------------------------------------------------------------------
+gen_rank:
+
+                        rts
+
+
+//------------------------------------------------------------------
+//------------------------------------------------------------------
+block_decode:
+                        rts               
 
 
 //------------------------------------------------------------------
@@ -109,13 +174,33 @@ reu_detect:
 //                         bne next
 //                         inc $frew_hi, x
 // 
+
+
 //------------------------------------------------------------------
-// BWT decode state and data fields.
+// BWT decode local tables.
 //------------------------------------------------------------------
 
 // The bank number for the first bank in the REU to use.
-// NOte that we will also use banks n+1 and n+2.
+// Note that we will also use banks n+1 and n+2.
 bwt_bank_n:  .byte $00
+
+.pc =$0400 "rank_table_low"
+rank_low: 
+                        .fill 256, $00
+
+.pc =$0500 "rank_table_high"
+rank_high:
+                        .fill 256, $00
+
+
+//------------------------------------------------------------------
+// Test data.
+//------------------------------------------------------------------
+test_index:
+                        .byte $00, $00
+
+test_block:
+                        .byte $00, $10, $20
 
 
 //======================================================================
