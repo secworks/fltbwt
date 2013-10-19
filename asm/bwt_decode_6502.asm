@@ -51,6 +51,14 @@
 //======================================================================
 
 //------------------------------------------------------------------
+// Defines
+//------------------------------------------------------------------
+// Start addresses for the 16 bit rank tables.
+.var rank_low  = $0400
+.var rank_high = $0500
+
+
+//------------------------------------------------------------------
 // Include KickAssembler Basic uppstart code.
 //------------------------------------------------------------------
 .pc =$0801 "Basic Upstart Program"
@@ -63,12 +71,13 @@
 // Start of the bwt decoder.
 //
 //------------------------------------------------------------------
-.pc =$0400 "bwt_decode"
+.pc =$4000 "bwt_decode"
 bwt_decode:
                         // Step 1: Check REU availability
-                        // Quit of not available.
+                        // Quit if not available.
                         jsr reu_detect
-                        beq reu_available 
+                        cmp #$00
+                        bne reu_available
                         jmp no_reu
 
 reu_available:
@@ -81,7 +90,7 @@ reu_available:
                         // 3.1 Store rank in bank N+1 and N+2
                         // 3.2 Increase rank counter.
 
-                        jsr gen_rank_tables
+                        jsr gen_rank
 
                         // Step 4: Starting with last byte, for
                         // each byte we perform pointer chasing 
@@ -94,10 +103,15 @@ reu_available:
                         rts
 
 
-no_reu:                 // Print error message and quit.
+no_reu:
+                        // Print error message and quit.
                         ldx #$00
-                        lda rts
-
+reu_fail_l1:            lda no_reu_error, x
+                        sta $0400, x
+                        inx
+                        cpx #$14
+                        bne reu_fail_l1
+                        rts
 
 //------------------------------------------------------------------
 // reu_detect()
@@ -108,6 +122,9 @@ no_reu:                 // Print error message and quit.
 // http://commodore64.wikispaces.com/Programming+the+REU
 //------------------------------------------------------------------
 reu_detect:
+                        lda #$00
+                        rts
+
                         ldx #$0
 
                         // Write x                          
@@ -158,44 +175,21 @@ block_decode:
 
 
 //------------------------------------------------------------------
-// Create frequency table for all bytes in the target.
-// We use two bytes/byte separated in hi and low tables.
+// BWT decode data and local tables.
 //------------------------------------------------------------------
-// gen_freq_table:     
-//                         lda #< target
-//                         sta $f8
-//                         lda #> target
-//                         sta $f9
-// 
-//                         ldy #$00
-//                         lda ($f8), y
-//                         tax
-//                         inc $freq_low, x
-//                         bne next
-//                         inc $frew_hi, x
-// 
-
-
-//------------------------------------------------------------------
-// BWT decode local tables.
-//------------------------------------------------------------------
+// No REU error string
+no_reu_error:           .text "error: no reu found."
 
 // The bank number for the first bank in the REU to use.
 // Note that we will also use banks n+1 and n+2.
 bwt_bank_n:  .byte $00
 
-.pc =$0400 "rank_table_low"
-rank_low: 
-                        .fill 256, $00
-
-.pc =$0500 "rank_table_high"
-rank_high:
-                        .fill 256, $00
 
 
 //------------------------------------------------------------------
 // Test data.
 //------------------------------------------------------------------
+
 test_index:
                         .byte $00, $00
 
@@ -206,3 +200,4 @@ test_block:
 //======================================================================
 // EOF bwt_decode_6502.asm
 //======================================================================
+
