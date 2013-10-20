@@ -124,7 +124,6 @@ reu_fail_l1:            lda no_reu_error, x
 reu_detect:
 
                         lda $df02
-                        tax
                         eor #$aa
                         sta $df02
                         lda $df02
