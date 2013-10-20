@@ -122,26 +122,13 @@ reu_fail_l1:            lda no_reu_error, x
 // http://commodore64.wikispaces.com/Programming+the+REU
 //------------------------------------------------------------------
 reu_detect:
-                        lda #$00
-                        rts
 
-                        ldx #$0
-
-                        // Write x                          
-reu_detect_l1:          txa
-                        sta $df02, x
-                        inx
-                        cpx #$04
-                        bne reu_detect_l1
- 
-                        ldx #$0
-reu_detect_l2:          txa
-                        cmp $df00, x
-                        bne reu_detect_fail
-                        inx
-                        cpx #$04
-                        bne reu_detect_l2
-
+                        lda $df02
+                        tax
+                        eor #$aa
+                        sta $df02
+                        lda $df02
+                        beq reu_detect_fail
                         lda #$01
                         rts
                         
