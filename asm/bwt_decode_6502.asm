@@ -51,11 +51,11 @@
 //======================================================================
 
 //------------------------------------------------------------------
-// Defines
+// Rank tables. Placed in the screen.
 //------------------------------------------------------------------
-// Start addresses for the 16 bit rank tables.
-.var rank_low  = $0400
-.var rank_high = $0500
+.pc = $0400 "Rank tables" virtual 
+rank_table_low:  .fill $100, $00
+rank_table_high: .fill $100, $00
 
 
 //------------------------------------------------------------------
@@ -150,7 +150,12 @@ block_copy:
 // 3. Increase the rank table for the char.
 //------------------------------------------------------------------
 gen_rank:
-
+                        ldx #$00
+                        lda #$00
+gen_rank_l1:            sta rank_table_low, x
+                        sta rank_table_high, x
+                        inx
+                        bne gen_rank_l1
                         rts
 
 
@@ -170,7 +175,7 @@ no_reu_error:           .text "error: no reu found."
 // Note that we will also use banks n+1 and n+2.
 bwt_bank_n:  .byte $00
 
-
+ran_table_lo: 
 
 //------------------------------------------------------------------
 // Test data.
