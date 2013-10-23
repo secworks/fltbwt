@@ -150,12 +150,58 @@ block_copy:
 // 3. Increase the rank table for the char.
 //------------------------------------------------------------------
 gen_rank:
+                        // Zero fill rank table.
                         ldx #$00
-                        lda #$00
+                        txa
 gen_rank_l1:            sta rank_table_low, x
                         sta rank_table_high, x
                         inx
                         bne gen_rank_l1
+
+                        // Set 16 bit read pointer to start of block
+                        lda #<block_data
+                        sta $f8
+                        lda #>block_data
+                        sta $f9
+                        // Set 16 bit byte counter to block length.
+                        lda block_data
+                        sta $fa
+                        lda block_data + 1
+                        sta $fb
+                        
+                        // Update rank table and index for each
+                        // char in the block
+                        ldy #$00
+gen_rank_l4:            lda ($f8), y
+                        tax
+
+                        // Get the current rank and store as
+                        // index for current char
+                        lda rank_table_low, x
+                        jsr store_index_low
+                        lda rank_table_high, x
+                        jsr store_index_high
+                        
+                        // Increase the char rank.
+                        inc rank_table_low, x
+                        bne gen_rank_l2
+                        inc rank_table_high, x
+
+gen_rank_l2:            // Increase the block char pointer.
+                        inc $f8
+                        bne gen_rank_l3
+                        inc $f9
+gen_rank_l3:
+                        // Decrease the block char counter and loop back
+                        // until we have checked all chars in the bank.
+                        dec $fa
+                        bne gen_rank_l4
+                        dec $fb
+                        bne gen_rank_l4
+                        rts
+
+store_index_high:      
+store_index_low:        sta $d020
                         rts
 
 
@@ -181,12 +227,13 @@ ran_table_lo:
 // Test data.
 //------------------------------------------------------------------
 
-test_index:
+block_index:
                         .byte $00, $00
 
-test_block:
+block_data:
                         .byte $00, $10, $20
 
+block_length:           .byte $03, $00
 
 //======================================================================
 // EOF bwt_decode_6502.asm
